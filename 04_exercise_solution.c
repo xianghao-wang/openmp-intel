@@ -2,7 +2,7 @@
 #include <omp.h>
 
 #define MAX_THREADS_N 10
-static long num_steps = 1000;
+static long num_steps = 1000000;
 double step;
 
 int main()
