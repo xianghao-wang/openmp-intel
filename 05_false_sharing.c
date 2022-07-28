@@ -2,6 +2,7 @@
 #include <omp.h>
 
 #define MAX_THREADS_N 5
+#define PADDING 8
 static long num_steps = 1000000000;
 double step;
 
@@ -9,7 +10,14 @@ int main()
 {
     int i;
     int n_threads;
-    double sum[MAX_THREADS_N];
+
+    /*
+        Each threads may share the same cache line, 
+        causing False Sharing.
+        This can be sovled by giving the shared array padding
+        to avoid them sharing the same cache line.
+    */
+    double sum[MAX_THREADS_N][PADDING];
     double pi;
     step = 1.0 / (double) num_steps;
 
@@ -29,15 +37,15 @@ int main()
         if (id == 0) n_threads = n_actual_threads;
 
         // Compute in cyclic
-        for (i = id, sum[id] = 0.0; i < num_steps; i += n_actual_threads) {
+        for (i = id, sum[id][0] = 0.0; i < num_steps; i += n_actual_threads) {
             x = i * step;
-            sum[id] += 4.0 / (1.0 + x * x);
+            sum[id][0] += 4.0 / (1.0 + x * x);
         }
     }
 
     for (i = 0, pi = 0.0; i < n_threads; i ++) 
     {
-        pi += sum[i] * step;
+        pi += sum[i][0] * step;
     }
 
     printf("PI is %8.5lf, computed by %3d threads, taking %8.5lf seconds.\n",
